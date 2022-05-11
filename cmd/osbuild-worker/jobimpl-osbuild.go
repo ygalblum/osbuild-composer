@@ -30,14 +30,17 @@ import (
 )
 
 type OSBuildJobImpl struct {
-	Store          string
-	Output         string
-	KojiServers    map[string]koji.GSSAPICredentials
-	GCPCreds       string
-	AzureCreds     *azure.Credentials
-	AWSCreds       string
-	AWSBucket      string
-	GenericS3Creds string
+	Store             string
+	Output            string
+	KojiServers       map[string]koji.GSSAPICredentials
+	GCPCreds          string
+	AzureCreds        *azure.Credentials
+	AWSCreds          string
+	AWSBucket         string
+	GenericS3Creds    string
+	GenericS3Endpoint string
+	GenericS3Region   string
+	GenericS3Bucket   string
 }
 
 // Returns an *awscloud.AWS object with the credentials of the request. If they
@@ -61,6 +64,39 @@ func (impl *OSBuildJobImpl) getAWSForEndpoint(endpoint, region, accessId, secret
 		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region)
 	}
 	return nil, fmt.Errorf("no credentials found")
+}
+
+func (impl *OSBuildJobImpl) getGenericS3Endpoint(options *target.GenericS3TargetOptions) (string, error) {
+	endpoint := options.Endpoint
+	if endpoint == "" {
+		endpoint = impl.GenericS3Endpoint
+	}
+	if endpoint == "" {
+		return "", fmt.Errorf("endpoint was not passed and default endpoint was not set")
+	}
+	return endpoint, nil
+}
+
+func (impl *OSBuildJobImpl) getGenericS3Region(options *target.GenericS3TargetOptions) (string, error) {
+	region := options.Region
+	if region == "" {
+		region = impl.GenericS3Region
+	}
+	if region == "" {
+		return "", fmt.Errorf("region was not passed and default region was not set")
+	}
+	return region, nil
+}
+
+func (impl *OSBuildJobImpl) getGenericS3Bucket(options *target.GenericS3TargetOptions) (string, error) {
+	bucket := options.Bucket
+	if bucket == "" {
+		bucket = impl.GenericS3Bucket
+	}
+	if bucket == "" {
+		return "", fmt.Errorf("bucket was not passed and default bucket was not set")
+	}
+	return bucket, nil
 }
 
 // getGCP returns an *gcp.GCP object using credentials based on the following
@@ -437,13 +473,28 @@ func (impl *OSBuildJobImpl) Run(job worker.Job) error {
 				return nil
 			}
 		case *target.GenericS3TargetOptions:
-			a, err := impl.getAWSForEndpoint(options.Endpoint, options.Region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken)
+			endpoint, err := impl.getGenericS3Endpoint(options)
+			if err != nil {
+				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
+			}
+
+			region, err := impl.getGenericS3Region(options)
+			if err != nil {
+				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
+			}
+
+			a, err := impl.getAWSForEndpoint(endpoint, region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken)
 			if err != nil {
 				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
 				return nil
 			}
 
-			err = uploadToS3(a, outputDirectory, exportPath, options.Bucket, options.Key, options.Filename, osbuildJobResult, true, args.StreamOptimized, streamOptimizedPath)
+			bucket, err := impl.getGenericS3Bucket(options)
+			if err != nil {
+				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
+			}
+
+			err = uploadToS3(a, outputDirectory, exportPath, bucket, options.Key, options.Filename, osbuildJobResult, true, args.StreamOptimized, streamOptimizedPath)
 			if err != nil {
 				return nil
 			}

@@ -214,6 +214,9 @@ func main() {
 		} `toml:"aws"`
 		GenericS3 *struct {
 			Credentials string `toml:"credentials"`
+			Endpoint    string `toml:"endpoint"`
+			Region      string `toml:"region"`
+			Bucket      string `toml:"bucket"`
 		} `toml:"generic_s3"`
 		Authentication *struct {
 			OAuthURL         string `toml:"oauth_url"`
@@ -390,8 +393,14 @@ func main() {
 	}
 
 	var genericS3Credentials = ""
+	var genericS3Endpoint = ""
+	var genericS3Region = ""
+	var genericS3Bucket = ""
 	if config.GenericS3 != nil {
 		genericS3Credentials = config.GenericS3.Credentials
+		genericS3Endpoint = config.GenericS3.Endpoint
+		genericS3Region = config.GenericS3.Region
+		genericS3Bucket = config.GenericS3.Bucket
 	}
 
 	// depsolve jobs can be done during other jobs
@@ -428,14 +437,17 @@ func main() {
 	// non-depsolve job
 	jobImpls := map[string]JobImplementation{
 		"osbuild": &OSBuildJobImpl{
-			Store:          store,
-			Output:         output,
-			KojiServers:    kojiServers,
-			GCPCreds:       gcpCredentials,
-			AzureCreds:     azureCredentials,
-			AWSCreds:       awsCredentials,
-			AWSBucket:      awsBucket,
-			GenericS3Creds: genericS3Credentials,
+			Store:             store,
+			Output:            output,
+			KojiServers:       kojiServers,
+			GCPCreds:          gcpCredentials,
+			AzureCreds:        azureCredentials,
+			AWSCreds:          awsCredentials,
+			AWSBucket:         awsBucket,
+			GenericS3Creds:    genericS3Credentials,
+			GenericS3Endpoint: genericS3Endpoint,
+			GenericS3Region:   genericS3Region,
+			GenericS3Bucket:   genericS3Bucket,
 		},
 		"osbuild-koji": &OSBuildKojiJobImpl{
 			Store:              store,
