@@ -41,6 +41,7 @@ type OSBuildJobImpl struct {
 	GenericS3Endpoint string
 	GenericS3Region   string
 	GenericS3Bucket   string
+	GenericS3CABundle   string
 }
 
 // Returns an *awscloud.AWS object with the credentials of the request. If they
