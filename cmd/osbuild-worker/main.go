@@ -217,6 +217,7 @@ func main() {
 			Endpoint    string `toml:"endpoint"`
 			Region      string `toml:"region"`
 			Bucket      string `toml:"bucket"`
+			CABundle	string `toml:"ca_bundle"`
 		} `toml:"generic_s3"`
 		Authentication *struct {
 			OAuthURL         string `toml:"oauth_url"`
@@ -396,11 +397,13 @@ func main() {
 	var genericS3Endpoint = ""
 	var genericS3Region = ""
 	var genericS3Bucket = ""
+	var genericS3CABundle = ""
 	if config.GenericS3 != nil {
 		genericS3Credentials = config.GenericS3.Credentials
 		genericS3Endpoint = config.GenericS3.Endpoint
 		genericS3Region = config.GenericS3.Region
 		genericS3Bucket = config.GenericS3.Bucket
+		genericS3CABundle = config.GenericS3.CABundle
 	}
 
 	// depsolve jobs can be done during other jobs
@@ -448,6 +451,7 @@ func main() {
 			GenericS3Endpoint: genericS3Endpoint,
 			GenericS3Region:   genericS3Region,
 			GenericS3Bucket:   genericS3Bucket,
+			GenericS3CABundle:   genericS3CABundle,
 		},
 		"osbuild-koji": &OSBuildKojiJobImpl{
 			Store:              store,
