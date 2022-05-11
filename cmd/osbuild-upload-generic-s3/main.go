@@ -15,6 +15,7 @@ func main() {
 	var sessionToken string
 	var region string
 	var endpoint string
+	var caBundle string
 	var bucketName string
 	var keyName string
 	var filename string
@@ -23,12 +24,13 @@ func main() {
 	flag.StringVar(&sessionToken, "session-token", "", "session token")
 	flag.StringVar(&region, "region", "", "target region")
 	flag.StringVar(&endpoint, "endpoint", "", "target endpoint")
+	flag.StringVar(&caBundle, "ca-bundle", "", "path to CA bundle for the S3 server")
 	flag.StringVar(&bucketName, "bucket", "", "target S3 bucket name")
 	flag.StringVar(&keyName, "key", "", "target S3 key name")
 	flag.StringVar(&filename, "image", "", "image file to upload")
 	flag.Parse()
 
-	a, err := awscloud.NewForEndpoint(endpoint, region, accessKeyID, secretAccessKey, sessionToken)
+	a, err := awscloud.NewForEndpoint(endpoint, region, accessKeyID, secretAccessKey, sessionToken, caBundle)
 	if err != nil {
 		println(err.Error())
 		return
