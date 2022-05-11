@@ -25,6 +25,10 @@ import (
 	"github.com/osbuild/osbuild-composer/internal/worker/clienterrors"
 )
 
+const (
+	genericS3Region = "local"
+)
+
 type apiHandlers struct {
 	server *Server
 }
@@ -351,12 +355,23 @@ func (h *apiHandlers) PostCompose(ctx echo.Context) error {
 				}
 
 				key := fmt.Sprintf("composer-api-%s", uuid.New().String())
-				t := target.NewAWSS3Target(&target.AWSS3TargetOptions{
-					Filename: imageType.Filename(),
-					Region:   awsS3UploadOptions.Region,
-					Bucket:   h.server.config.AWSBucket,
-					Key:      key,
-				})
+				var t *target.Target
+				if awsS3UploadOptions.Region == genericS3Region {
+					t = target.NewGenericS3Target(&target.GenericS3TargetOptions{
+						AWSS3TargetOptions: target.AWSS3TargetOptions{
+							Filename: imageType.Filename(),
+							Bucket:   h.server.config.GenericS3Bucket,
+							Key:      key,
+						},
+					})
+				} else {
+					t = target.NewAWSS3Target(&target.AWSS3TargetOptions{
+						Filename: imageType.Filename(),
+						Region:   awsS3UploadOptions.Region,
+						Bucket:   h.server.config.AWSBucket,
+						Key:      key,
+					})
+				}
 				t.ImageName = key
 
 				irTarget = t
