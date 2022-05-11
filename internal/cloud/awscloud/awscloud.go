@@ -64,7 +64,7 @@ func NewDefault(region string) (*AWS, error) {
 }
 
 // Create a new session from the credentials and the region and returns an *AWS object initialized with it.
-func newAwsFromCredsWithEndpoint(creds *credentials.Credentials, region, endpoint string, caBundle *string) (*AWS, error) {
+func newAwsFromCredsWithEndpoint(creds *credentials.Credentials, region, endpoint string, caBundle string) (*AWS, error) {
 	// Create a Session with a custom region
 	s3ForcePathStyle := true
 	sessionOptions := session.Options{
@@ -76,8 +76,8 @@ func newAwsFromCredsWithEndpoint(creds *credentials.Credentials, region, endpoin
 		},
 	}
 
-	if caBundle != nil {
-		caBundleReader, err := os.Open(*caBundle)
+	if caBundle != "" {
+		caBundleReader, err := os.Open(caBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func newAwsFromCredsWithEndpoint(creds *credentials.Credentials, region, endpoin
 }
 
 // Initialize a new AWS object targeting a specific endpoint from individual bits. SessionToken is optional
-func NewForEndpoint(endpoint, region string, accessKeyID string, accessKey string, sessionToken string, caBundle *string) (*AWS, error) {
+func NewForEndpoint(endpoint, region, accessKeyID, accessKey, sessionToken, caBundle string) (*AWS, error) {
 	return newAwsFromCredsWithEndpoint(credentials.NewStaticCredentials(accessKeyID, accessKey, sessionToken), region, endpoint, caBundle)
 }
 
@@ -111,7 +111,7 @@ func NewForEndpoint(endpoint, region string, accessKeyID string, accessKey strin
 // If filename is empty the underlying function will look for the
 // "AWS_SHARED_CREDENTIALS_FILE" env variable or will default to
 // $HOME/.aws/credentials.
-func NewForEndpointFromFile(filename string, endpoint, region string, caBundle *string) (*AWS, error) {
+func NewForEndpointFromFile(filename, endpoint, region, caBundle string) (*AWS, error) {
 	return newAwsFromCredsWithEndpoint(credentials.NewSharedCredentials(filename, "default"), region, endpoint, caBundle)
 }
 
