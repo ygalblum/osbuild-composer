@@ -41,7 +41,7 @@ type OSBuildJobImpl struct {
 	GenericS3Endpoint string
 	GenericS3Region   string
 	GenericS3Bucket   string
-	GenericS3CABundle   string
+	GenericS3CABundle string
 }
 
 // Returns an *awscloud.AWS object with the credentials of the request. If they
@@ -68,12 +68,17 @@ func (impl *OSBuildJobImpl) getAWSForGenericS3(options *target.GenericS3TargetOp
 		return nil, err
 	}
 
+	caBundle, err := impl.getGenericS3CABundle(options)
+	if err != nil {
+		return nil, err
+	}
+
 	if options.AccessKeyID != "" && options.SecretAccessKey != "" {
-		return awscloud.NewForEndpoint(endpoint, region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken, nil)
+		return awscloud.NewForEndpoint(endpoint, region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken, caBundle)
 	}
 
 	if impl.GenericS3Creds != "" {
-		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region, nil)
+		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region, caBundle)
 	}
 
 	return nil, fmt.Errorf("no credentials found")
@@ -99,6 +104,11 @@ func (impl *OSBuildJobImpl) getGenericS3Region(options *target.GenericS3TargetOp
 		return "", fmt.Errorf("region was not passed and default region was not set")
 	}
 	return region, nil
+}
+
+func (impl *OSBuildJobImpl) getGenericS3CABundle(options *target.GenericS3TargetOptions) (string, error) {
+	caBundle := impl.GenericS3CABundle
+	return caBundle, nil
 }
 
 func (impl *OSBuildJobImpl) getGenericS3Bucket(options *target.GenericS3TargetOptions) (string, error) {
