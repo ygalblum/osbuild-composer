@@ -58,10 +58,10 @@ func (impl *OSBuildJobImpl) getAWS(region string, accessId string, secret string
 
 func (impl *OSBuildJobImpl) getAWSForEndpoint(endpoint, region, accessId, secret, token string) (*awscloud.AWS, error) {
 	if accessId != "" && secret != "" {
-		return awscloud.NewForEndpoint(endpoint, region, accessId, secret, token)
+		return awscloud.NewForEndpoint(endpoint, region, accessId, secret, token, nil)
 	}
 	if impl.GenericS3Creds != "" {
-		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region)
+		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region, nil)
 	}
 	return nil, fmt.Errorf("no credentials found")
 }

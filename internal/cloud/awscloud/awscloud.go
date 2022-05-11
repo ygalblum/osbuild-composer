@@ -22,14 +22,11 @@ type AWS struct {
 }
 
 // Create a new session from the credentials and the region and returns an *AWS object initialized with it.
-func newAwsFromCreds(creds *credentials.Credentials, region string, endpoint *string) (*AWS, error) {
+func newAwsFromCreds(creds *credentials.Credentials, region string) (*AWS, error) {
 	// Create a Session with a custom region
-	s3ForcePathStyle := endpoint != nil
 	sess, err := session.NewSession(&aws.Config{
-		Credentials:      creds,
-		Region:           aws.String(region),
-		Endpoint:         endpoint,
-		S3ForcePathStyle: &s3ForcePathStyle,
+		Credentials: creds,
+		Region:      aws.String(region),
 	})
 	if err != nil {
 		return nil, err
@@ -44,7 +41,7 @@ func newAwsFromCreds(creds *credentials.Credentials, region string, endpoint *st
 
 // Initialize a new AWS object from individual bits. SessionToken is optional
 func New(region string, accessKeyID string, accessKey string, sessionToken string) (*AWS, error) {
-	return newAwsFromCreds(credentials.NewStaticCredentials(accessKeyID, accessKey, sessionToken), region, nil)
+	return newAwsFromCreds(credentials.NewStaticCredentials(accessKeyID, accessKey, sessionToken), region)
 }
 
 // Initializes a new AWS object with the credentials info found at filename's location.
@@ -57,18 +54,52 @@ func New(region string, accessKeyID string, accessKey string, sessionToken strin
 // "AWS_SHARED_CREDENTIALS_FILE" env variable or will default to
 // $HOME/.aws/credentials.
 func NewFromFile(filename string, region string) (*AWS, error) {
-	return newAwsFromCreds(credentials.NewSharedCredentials(filename, "default"), region, nil)
+	return newAwsFromCreds(credentials.NewSharedCredentials(filename, "default"), region)
 }
 
 // Initialize a new AWS object from defaults.
 // Looks for env variables, shared credential file, and EC2 Instance Roles.
 func NewDefault(region string) (*AWS, error) {
-	return newAwsFromCreds(nil, region, nil)
+	return newAwsFromCreds(nil, region)
+}
+
+// Create a new session from the credentials and the region and returns an *AWS object initialized with it.
+func newAwsFromCredsWithEndpoint(creds *credentials.Credentials, region, endpoint string, caBundle *string) (*AWS, error) {
+	// Create a Session with a custom region
+	s3ForcePathStyle := true
+	sessionOptions := session.Options{
+		Config: aws.Config{
+			Credentials:      creds,
+			Region:           aws.String(region),
+			Endpoint:         &endpoint,
+			S3ForcePathStyle: &s3ForcePathStyle,
+		},
+	}
+
+	if caBundle != nil {
+		caBundleReader, err := os.Open(*caBundle)
+		if err != nil {
+			return nil, err
+		}
+		defer caBundleReader.Close()
+		sessionOptions.CustomCABundle = caBundleReader
+	}
+
+	sess, err := session.NewSessionWithOptions(sessionOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AWS{
+		uploader: s3manager.NewUploader(sess),
+		ec2:      ec2.New(sess),
+		s3:       s3.New(sess),
+	}, nil
 }
 
 // Initialize a new AWS object targeting a specific endpoint from individual bits. SessionToken is optional
-func NewForEndpoint(endpoint, region string, accessKeyID string, accessKey string, sessionToken string) (*AWS, error) {
-	return newAwsFromCreds(credentials.NewStaticCredentials(accessKeyID, accessKey, sessionToken), region, &endpoint)
+func NewForEndpoint(endpoint, region string, accessKeyID string, accessKey string, sessionToken string, caBundle *string) (*AWS, error) {
+	return newAwsFromCredsWithEndpoint(credentials.NewStaticCredentials(accessKeyID, accessKey, sessionToken), region, endpoint, caBundle)
 }
 
 // Initializes a new AWS object targeting a specific endpoint with the credentials info found at filename's location.
@@ -80,8 +111,8 @@ func NewForEndpoint(endpoint, region string, accessKeyID string, accessKey strin
 // If filename is empty the underlying function will look for the
 // "AWS_SHARED_CREDENTIALS_FILE" env variable or will default to
 // $HOME/.aws/credentials.
-func NewForEndpointFromFile(filename string, endpoint, region string) (*AWS, error) {
-	return newAwsFromCreds(credentials.NewSharedCredentials(filename, "default"), region, &endpoint)
+func NewForEndpointFromFile(filename string, endpoint, region string, caBundle *string) (*AWS, error) {
+	return newAwsFromCredsWithEndpoint(credentials.NewSharedCredentials(filename, "default"), region, endpoint, caBundle)
 }
 
 func (a *AWS) Upload(filename, bucket, key string) (*s3manager.UploadOutput, error) {
