@@ -57,13 +57,25 @@ func (impl *OSBuildJobImpl) getAWS(region string, accessId string, secret string
 	}
 }
 
-func (impl *OSBuildJobImpl) getAWSForEndpoint(endpoint, region, accessId, secret, token string) (*awscloud.AWS, error) {
-	if accessId != "" && secret != "" {
-		return awscloud.NewForEndpoint(endpoint, region, accessId, secret, token, nil)
+func (impl *OSBuildJobImpl) getAWSForGenericS3(options *target.GenericS3TargetOptions) (*awscloud.AWS, error) {
+	endpoint, err := impl.getGenericS3Endpoint(options)
+	if err != nil {
+		return nil, err
 	}
+
+	region, err := impl.getGenericS3Region(options)
+	if err != nil {
+		return nil, err
+	}
+
+	if options.AccessKeyID != "" && options.SecretAccessKey != "" {
+		return awscloud.NewForEndpoint(endpoint, region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken, nil)
+	}
+
 	if impl.GenericS3Creds != "" {
 		return awscloud.NewForEndpointFromFile(impl.GenericS3Creds, endpoint, region, nil)
 	}
+
 	return nil, fmt.Errorf("no credentials found")
 }
 
@@ -474,17 +486,7 @@ func (impl *OSBuildJobImpl) Run(job worker.Job) error {
 				return nil
 			}
 		case *target.GenericS3TargetOptions:
-			endpoint, err := impl.getGenericS3Endpoint(options)
-			if err != nil {
-				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
-			}
-
-			region, err := impl.getGenericS3Region(options)
-			if err != nil {
-				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
-			}
-
-			a, err := impl.getAWSForEndpoint(endpoint, region, options.AccessKeyID, options.SecretAccessKey, options.SessionToken)
+			a, err := impl.getAWSForGenericS3(options)
 			if err != nil {
 				osbuildJobResult.JobError = clienterrors.WorkerClientError(clienterrors.ErrorInvalidConfig, err.Error())
 				return nil
