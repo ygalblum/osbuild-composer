@@ -107,7 +107,10 @@ func (impl *OSBuildJobImpl) getGenericS3Region(options *target.GenericS3TargetOp
 }
 
 func (impl *OSBuildJobImpl) getGenericS3CABundle(options *target.GenericS3TargetOptions) (string, error) {
-	caBundle := impl.GenericS3CABundle
+	caBundle := options.CABundle
+	if caBundle == "" {
+		caBundle = impl.GenericS3CABundle
+	}
 	return caBundle, nil
 }
 

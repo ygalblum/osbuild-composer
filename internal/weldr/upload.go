@@ -97,6 +97,7 @@ func (ociUploadSettings) isUploadSettings() {}
 type genericS3UploadSettings struct {
 	awsS3UploadSettings
 	Endpoint string `json:"endpoint"`
+	CABundle string `json:"ca_bundle"`
 }
 
 func (genericS3UploadSettings) isUploadSettings() {}
@@ -235,6 +236,7 @@ func targetsToUploadResponses(targets []*target.Target, state ComposeState) []up
 					// AccessKeyID and SecretAccessKey are intentionally not included.
 				},
 				Endpoint: options.Endpoint,
+				CABundle: options.CABundle,
 			}
 			uploads = append(uploads, upload)
 		}

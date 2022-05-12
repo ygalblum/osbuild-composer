@@ -3,6 +3,7 @@ package target
 type GenericS3TargetOptions struct {
 	AWSS3TargetOptions
 	Endpoint string `json:"endpoint"`
+	CABundle string `json:"ca_bundle"`
 }
 
 func (GenericS3TargetOptions) isTargetOptions() {}
