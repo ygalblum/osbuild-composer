@@ -217,7 +217,7 @@ func main() {
 			Endpoint    string `toml:"endpoint"`
 			Region      string `toml:"region"`
 			Bucket      string `toml:"bucket"`
-			CABundle	string `toml:"ca_bundle"`
+			CABundle    string `toml:"ca_bundle"`
 		} `toml:"generic_s3"`
 		Authentication *struct {
 			OAuthURL         string `toml:"oauth_url"`
@@ -451,7 +451,7 @@ func main() {
 			GenericS3Endpoint: genericS3Endpoint,
 			GenericS3Region:   genericS3Region,
 			GenericS3Bucket:   genericS3Bucket,
-			GenericS3CABundle:   genericS3CABundle,
+			GenericS3CABundle: genericS3CABundle,
 		},
 		"osbuild-koji": &OSBuildKojiJobImpl{
 			Store:              store,
